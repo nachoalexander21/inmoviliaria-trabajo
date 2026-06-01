@@ -1,0 +1,236 @@
+function crearBaseDeDatos() {
+
+  const ss =
+  SpreadsheetApp.getActiveSpreadsheet();
+
+  let hoja =
+  ss.getSheetByName("Reservas");
+
+  if(!hoja){
+
+    hoja =
+    ss.insertSheet("Reservas");
+
+  }
+
+  hoja.clear();
+
+  const encabezados = [[
+
+    "ID",
+    "Nombre",
+    "Email",
+    "Telefono",
+    "Fecha",
+    "Hora",
+    "Propiedad",
+    "Mensaje",
+    "FechaRegistro",
+    "WhatsApp"
+
+  ]];
+
+  hoja.getRange(1,1,1,10)
+  .setValues(encabezados);
+
+  hoja.getRange(1,1,1,10)
+  .setBackground("#0f766e")
+  .setFontColor("white")
+  .setFontWeight("bold");
+
+  hoja.setFrozenRows(1);
+
+}
+
+
+
+/* ===================================================== */
+/* ===================================================== */
+/* ===================================================== */
+
+function doPost(e) {
+
+  try {
+
+    const hoja =
+    SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName("Reservas");
+
+    const data =
+    JSON.parse(e.postData.contents);
+
+    /* ===================================== */
+    /* ID NUMERICO */
+    /* ===================================== */
+
+    const ultimaFila =
+    hoja.getLastRow();
+
+    const id =
+    ultimaFila;
+
+    /* ===================================== */
+
+    const nombre =
+    data.nombre;
+
+    const email =
+    data.email;
+
+    const telefono =
+    data.telefono;
+
+    const fecha =
+    data.fecha;
+
+    const hora =
+    data.hora;
+
+    const propiedad =
+    data.propiedad;
+
+    const mensaje =
+    data.mensaje;
+
+    /* ===================================== */
+    /* MENSAJE WHATSAPP */
+    /* ===================================== */
+
+    const texto = encodeURIComponent(
+
+`Hola ${nombre}, somos HouseSprigg.
+
+Tu cita para visitar la propiedad fue registrada correctamente.
+
+📅 Fecha: ${fecha}
+⏰ Hora: ${hora}
+🏡 Propiedad: ${propiedad}
+
+Importante:
+La reservación corresponde únicamente a la visita y revisión de la propiedad.
+
+Cualquier tipo de adelanto, pago o proceso adicional será realizado únicamente después de finalizar la visita presencial.
+
+Gracias por confiar en HouseSprigg.`
+
+);
+
+    const whatsapp =
+
+    "https://wa.me/591" +
+    telefono +
+    "?text=" +
+    texto;
+
+    /* ===================================== */
+    /* GUARDAR */
+    /* ===================================== */
+
+    hoja.appendRow([
+
+      id,
+      nombre,
+      email,
+      telefono,
+      fecha,
+      hora,
+      propiedad,
+      mensaje,
+      new Date(),
+      whatsapp
+
+    ]);
+
+    /* ===================================== */
+    /* BOTON WHATSAPP */
+    /* ===================================== */
+
+    const nuevaFila =
+    hoja.getLastRow();
+
+    hoja.getRange(nuevaFila,10)
+    .setFormula(
+
+      '=HYPERLINK("' +
+      whatsapp +
+      '","Enviar WhatsApp")'
+
+    );
+
+    /* ===================================== */
+    /* CORREO AL ADMIN */
+    /* ===================================== */
+
+    const asunto =
+
+    "Nueva reservación en HouseSprigg";
+
+    const cuerpo =
+
+    "Se registró una nueva cita.\n\n" +
+
+    "DATOS DEL CLIENTE\n\n" +
+
+    "Nombre: " + nombre + "\n" +
+    "Correo: " + email + "\n" +
+    "Teléfono: " + telefono + "\n" +
+    "Propiedad: " + propiedad + "\n" +
+    "Fecha: " + fecha + "\n" +
+    "Hora: " + hora + "\n\n" +
+
+    "Mensaje:\n" + mensaje + "\n\n" +
+
+    "WhatsApp:\n" + whatsapp;
+
+    MailApp.sendEmail({
+
+      to:"nachoalexander36@gmail.com",
+
+      subject:asunto,
+
+      body:cuerpo
+
+    });
+
+    /* ===================================== */
+    /* RESPUESTA */
+    /* ===================================== */
+
+    return ContentService
+    .createTextOutput(
+
+      JSON.stringify({
+
+        status:"success"
+
+      })
+
+    )
+    .setMimeType(
+      ContentService.MimeType.JSON
+    );
+
+  }
+
+  catch(error){
+
+    return ContentService
+    .createTextOutput(
+
+      JSON.stringify({
+
+        status:"error",
+
+        message:error.toString()
+
+      })
+
+    )
+    .setMimeType(
+      ContentService.MimeType.JSON
+    );
+
+  }
+
+}
